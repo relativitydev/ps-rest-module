@@ -5,7 +5,7 @@ Open Source Community: A PowerShell module to facilitate the integration of Rela
 Follow the PowerShell instructions for the Install-Module cmdlet.
 
 ## Example
-In just three lines you can have return all workspaces in your Relativity instance!
+In just three lines you can return all workspaces in your Relativity instance!
 
 ```
 # Enter your user credentials
