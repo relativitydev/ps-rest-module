@@ -292,3 +292,62 @@ param(
     $results = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Post -Headers $Connection.RestHeaders -Body $query -ContentType 'application/json'
     return (New-PipedObject -Connection $Connection -Results $results)
 }
+
+# User functions
+<#
+    Returns all users in the Relativity instance
+#>
+function Get-AllUsers {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection
+)
+    $Connection.RestAction = '/Relativity/User'
+    $results = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
+<#
+    Returns one or more users from an array of user IDs
+
+    $ArtifactIDs - the artifact IDs of the user(s) you want to retrieve
+#>
+function Get-User {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32[]]$ArtifactIDs
+)
+    $results = @{}
+    For ($i = 0; $i -lt $ArtifactIDs.Count; $i++) {
+
+        $Connection.RestAction = ('/Relativity/User/{0}' -f $ArtifactIDs[$i])
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
+        $results.Add($ArtifactIDs[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
+<#
+    Returns one or more users based on whether the name matches 
+
+    $Name - This is automatically fuzzy; no need for %
+#>
+function Query-UserByLastName {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.String]$Name
+)
+
+    $Connection.RestAction = '/Relativity/User/QueryResult'
+    $query = Get-Condition -Field 'Last Name' -Value $Name -Condition 'LIKE'
+    $results = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Post -Headers $Connection.RestHeaders -Body $query -ContentType 'application/json'
+
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
