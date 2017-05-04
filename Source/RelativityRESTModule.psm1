@@ -351,3 +351,57 @@ param(
 
     return (New-PipedObject -Connection $Connection -Results $results)
 }
+
+# Application functions
+<#
+    Returns all applications in a specified workspace
+
+    $WorkspaceIDs - specify which workspace (-1 [EDDS] doesn't work at this time)
+#>
+function Get-AllApplications {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32[]]$WorkspaceIDs
+)
+
+    $results = @{}
+    For ($i = 0; $i -lt $WorkspaceIDs.Count; $i++) {
+
+        $Connection.RestAction = ('/Workspace/{0}/Relativity Application' -f $WorkspaceIDs[$i])
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
+        $results.Add($WorkspaceIDs[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
+<#
+    Returns one or more applications by guid from the specified workspace
+
+    $WorkspaceID - the workspace the application(s) reside
+    $Guids - One or more application guids
+#>
+function Get-Application {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32]$WorkspaceID,
+
+    [parameter(Mandatory=$true)]
+    [System.Guid[]]$Guids
+)
+
+    $results = @{}
+    For ($i = 0; $i -lt $Guids.Count; $i++) {
+
+        $Connection.RestAction = ('/Workspace/{0}/Relativity Application/{1}' -f $WorkspaceID, $Guids[$i])
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
+        $results.Add($Guids[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
