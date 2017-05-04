@@ -410,7 +410,7 @@ param(
 <#
     Returns all object types from one or more workspaces
 
-    $WorkspaceIDs - the workspace(s) to retrieve all object types
+    $WorkspaceIDs - an array of workspace id(s) to retrieve all object types from
 #>
 function Get-AllObjectTypes {
 [CmdletBinding()]
@@ -428,6 +428,55 @@ param(
         $Connection.RestAction = ('/Workspace/{0}/Object Type' -f $WorkspaceIDs[$i])
         $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
         $results.Add($WorkspaceIDs[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
+
+# Object Query functions
+<#
+    Queries one or more of any object type in Relativity in a certain workspace
+
+    $ArtifactTypeIDs - an array of object type ids.  These may be retrieved from a workspace using the 
+                       Get-AllObjectTypes cmdlet and is called the 'Descriptor Artifact Type ID' field
+    $WorkspaceID - the workspace to query.
+
+    Note: will return ALL fields on the object.  i.e. 'Fields': ['*']
+#>
+function Query-ObjectByType {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32[]]$ArtifactTypeIDs,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32]$WorkspaceID
+)
+
+    # This is a basic template of an object query request
+    $BaseBody = "{
+        'workspaceId': {WORKSPACEID},
+        'artifactTypeId': {ARTIFACTTYPEID},
+        'query': {
+            'Fields': ['*'],
+            'Condition': ""('Artifact ID' > 1)"",
+            'Sorts': ['Artifact ID DESC']
+            },
+        'start': 1,
+        'length': 100,
+        'includePermissions': [2,3,4],
+        'queryToken': ''
+    }"
+
+    $Connection.RestAction = '/api/Relativity.Services.ObjectQuery.IObjectQueryModule/Object%20Query%20Manager/QueryAsync'
+    $results = @{}
+    For ($i = 0; $i -lt $ArtifactTypeIDs.Count; $i++) {
+
+        $body = $BaseBody.Replace('{ARTIFACTTYPEID}', $ArtifactTypeIDs[$i]).Replace('{WORKSPACEID}', $WorkspaceID)
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Post -Headers $Connection.RestHeaders -Body $body -ContentType 'application/json'
+        $results.Add($ArtifactTypeIDs[$i], $result)
     }
     return (New-PipedObject -Connection $Connection -Results $results)
 }
