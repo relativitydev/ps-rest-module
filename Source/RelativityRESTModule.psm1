@@ -405,3 +405,29 @@ param(
     }
     return (New-PipedObject -Connection $Connection -Results $results)
 }
+
+# Object Type functions
+<#
+    Returns all object types from one or more workspaces
+
+    $WorkspaceIDs - the workspace(s) to retrieve all object types
+#>
+function Get-AllObjectTypes {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32[]]$WorkspaceIDs
+)
+
+    $results = @{}
+    For ($i = 0; $i -lt $WorkspaceIDs.Count; $i++) {
+
+        $Connection.RestAction = ('/Workspace/{0}/Object Type' -f $WorkspaceIDs[$i])
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
+        $results.Add($WorkspaceIDs[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
