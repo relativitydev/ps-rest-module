@@ -10,8 +10,10 @@ In just three lines you can have return all workspaces in your Relativity instan
 ```
 # Enter your user credentials
 $cred = Get-Credentials
+
 # Create a connection object
 $con = New-ConnectionObject -RestHost 'my_relativity_host_name' -Credential $cred
+
 # Return all workspaces
 $results = Get-AllWorkspaces -Connection $con
 ```
