@@ -480,3 +480,36 @@ param(
     }
     return (New-PipedObject -Connection $Connection -Results $results)
 }
+
+# Document functions
+<#
+    Reads all fields from one or more documents in a certain workspace
+
+    $ArtifactIDs - The artifact ID(s) of the document(s) to be read.
+    $WorkspaceID - the workspace to read from.
+
+    Note: will return ALL fields on the object.  i.e. 'Fields': ['*']
+#>
+function Read-Document {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32[]]$ArtifactIDs,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32]$WorkspaceID
+)
+
+    $Connection.RestAction = '/Relativity.REST/Workspace/{WORKSPACEID}/Document/{ARTIFACTID}'
+    $results = @{}
+    For ($i = 0; $i -lt $ArtifactIDs.Count; $i++) {
+
+        $Connection.RestAction = ('/Workspace/{0}/Document/{1}' -f $WorkspaceID, $ArtifactIDs[$i])
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Get -Headers $Connection.RestHeaders
+        $results.Add($ArtifactIDs[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
