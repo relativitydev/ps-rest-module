@@ -1,4 +1,10 @@
-﻿# Setup functions
+﻿<#
+This Powershell module adds functions common to both the RelativityRESTModule
+and the RelativityUnsupportedRESTModule. These simplify interactions with
+REST endpoints and encourage templates and piping. If you choose to add functions
+to this repository, I strongly encourage you to build with these functions.
+#>
+# Setup functions
 #######################
 <#
 .SYNOPSIS
