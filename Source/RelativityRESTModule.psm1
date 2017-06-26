@@ -513,3 +513,70 @@ param(
     }
     return (New-PipedObject -Connection $Connection -Results $results)
 }
+
+# Saved Search (Keyword) functions
+<#
+    Reads all fields from a saved search in a certain workspace
+
+    $ArtifactIDs - The artifact ID(s) of the saved searches(s) to be read.
+    $WorkspaceID - the workspace to read from.
+
+    Note: will return ALL fields on the object.  i.e. 'Fields': ['*']
+#>
+function Read-SavedSearch {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32[]]$ArtifactIDs,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32]$WorkspaceID
+)
+    # This is a basic template of a saved search read request
+    $BaseBody = "{
+        'workspaceArtifactID': {WORKSPACEID},
+        'searchArtifactID': {SAVEDSEARCHID}
+    }"
+
+    $Connection.RestAction = '/api/Relativity.Services.Search.ISearchModule/Keyword%20Search%20Manager/ReadSingleAsync'
+    $results = @{}
+    For ($i = 0; $i -lt $ArtifactIDs.Count; $i++) {
+
+        $body = $BaseBody.Replace('{SAVEDSEARCHID}', $ArtifactIDs[$i]).Replace('{WORKSPACEID}', $WorkspaceID)
+        $result = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Post -Headers $Connection.RestHeaders -Body $body -ContentType 'application/json'
+        $results.Add($ArtifactIDs[$i], $result)
+    }
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
+
+<#
+    Reads all fields which may be used as criteria for a saved search in a certain workspace
+
+    $WorkspaceID - the workspace to read from.
+#>
+function Read-AvailableFieldsForSearchCriteria {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection,
+
+    [parameter(Mandatory=$true)]
+    [System.Int32]$WorkspaceID
+)
+    # This is a basic template of a GetFieldsForCriteriaCondition request
+    $BaseBody = "{
+        'workspaceArtifactID': {WORKSPACEID},
+        'artifactTypeID': 10
+    }"
+
+    $Connection.RestAction = '/api/Relativity.Services.Search.ISearchModule/Keyword%20Search%20Manager/GetFieldsForCriteriaConditionAsync'
+    $results = @{}
+
+    $body = $BaseBody.Replace('{WORKSPACEID}', $WorkspaceID)
+    $results = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Post -Headers $Connection.RestHeaders -Body $body -ContentType 'application/json'
+
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
