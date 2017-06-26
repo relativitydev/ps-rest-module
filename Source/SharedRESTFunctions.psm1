@@ -1,12 +1,25 @@
 ﻿# Setup functions
+
 <#
-    Takes a PSCredential and returns a Dictionary of the required headers for any REST action
+.SYNOPSIS
+Gets the required headers for any REST action.
 
-    $Credential - use the cmdlet Get-Credential to retrieve
+.PARAMETER Credential
+The username and password credentials used to connect to the REST endpoint.
 
-    Required Headings:
-    Basic Authorization as a base64-encoded string from the username and password
-    X-CSRF-Header as an empty string
+.OUTPUTS
+System.Collections.Hashtable
+
+.EXAMPLE
+C:\PS> New-ConnectionObject -Credential (Get-Credential)
+
+.NOTES
+You may use the Get-Credential cmdlet to retrieve the credential object in a secure fashion.
+
+Relativity REST endpoints require two headers:
+
+    A basic authorization as a base64-encoded string of the username and password
+    An empty X-CSRF-Header
 #>
 function Get-RestHeaders {
 param(
@@ -19,40 +32,69 @@ param(
     return @{Authorization=("Basic {0}" -f $base64key); "X-CSRF-Header"=" "}
 }
 <#
-    Takes the REST host and action and returns a Uri object.  Optionally you may set the protocol.
+.SYNOPSIS
+Converts the REST protocol, host, and action into a URI.
 
-    $RestHost   - relativity-9-4
-    $RestAction - /Workspace/1224567
-    $Protocol   - http or https
+.PARAMETER Protocol
+The connection protocol (http/https).
+
+.PARAMETER RestHost
+The hostname of the Relativity instance you wish to connect with.
+
+.PARAMETER RestAction
+The REST endpoint that will be acted on.  Please include a '/' at the beginning. '/Relativity.REST' is already included.
+
+.OUTPUTS
+System.Uri
+
+.EXAMPLE
+C:\PS> Get-RestUri -Protocol 'http' -RestHost 'my-rel-instance' -RestAction '/Workspace/1234567'
 #>
 function Get-RestUri { 
 param(
     [parameter(Mandatory=$true)]
+    $Protocol,
+
+    [parameter(Mandatory=$true)]
     $RestHost,
 
-    [parameter(Mandatory=$true)]
-    $RestAction,
-
-    [parameter(Mandatory=$true)]
-    $Protocol
+    [parameter(Mandatory=$false)]
+    $RestAction
 )
 
     # Standardize the action path syntax
     if ($RestAction[0] -ne '/') {
-        Throw [System.ArgumentException] "Please add a '/' before your action "
+        Throw [System.ArgumentException] "Please add a '/' before your action"
+    }
+    # Notify user that Relativity.REST is already included
+    if ($RestAction.ToLower().Contains('relativity.rest')) {
+        Throw [System.ArgumentException] "Relativity.REST is already included in the URI, please remove"
     }
 
-    $uri_string = [System.String]::Concat($Protocol, '://', $RestHost, '/Relativity.Rest', $RestAction)
+    $uri_string = [System.String]::Concat($Protocol, '://', $RestHost, '/Relativity.REST', $RestAction)
     return New-Object -TypeName System.Uri($uri_string)
 }
 <#
-    Returns a connection object which contains all the necessary
-    information to invoke a REST call.
+.SYNOPSIS
+Creates a custom object that encapsulates functionality necessary to connect to a REST endpoint.
 
-    $RestHost   - relativity-9-4
-    $RestAction - /Workspace/1224567 (default is '/')
-    $Protocol   - http (default) or https
-    $Credential - use the cmdlet Get-Credential to retrieve
+.PARAMETER Credential
+The username and password credentials used to connect to the REST endpoint.
+
+.PARAMETER RestHost
+The hostname of the Relativity instance you wish to connect with.
+
+.PARAMETER RestAction
+The REST endpoint that will be acted on.  Please include a '/' at the beginning. '/Relativity.REST' is already included. '/' is the default.
+
+.PARAMETER Protocol
+The connection protocol (http/https). 'http' is the default.
+
+.OUTPUTS
+System.Management.Automation.PSCustomObject
+
+.EXAMPLE
+C:\PS> New-ConnectionObject -Credential (Get-Credential) -RestHost 'my-rel-instance'
 #>
 function New-ConnectionObject {
 param(
@@ -66,12 +108,8 @@ param(
     [System.String]$RestAction = '/',
 
     [parameter(Mandatory=$false)]
-    [System.String]$RestProtocol = 'http',
-
-    [parameter(Mandatory=$false)]
-    [switch]$DefaultUser
+    [System.String]$RestProtocol = 'http'
 )
-
     $con = New-Object -TypeName PSCustomObject
 
     Add-Member -InputObject $con -MemberType NoteProperty -Name RestHost -Value $RestHost
@@ -83,9 +121,20 @@ param(
     return $con
 }
 <#
-    Returns an object that encapsulates both the connection and the
-    results from a REST call.  This encapsulation can, so long as the
-    method supports it, make cmd line chaining possible.
+.SYNOPSIS
+Returns an object that encapsulates both the connection and the results from a REST call.  Can be chained into functions with pipe support.
+
+.PARAMETER Connection
+A custom object with functionality necessary to connect to a REST endpoint.  Use the New-ConnectionObject cmdlet.
+
+.PARAMETER Results
+A custom object with the results of the REST call.
+
+.OUTPUTS
+System.Management.Automation.PSCustomObject
+
+.EXAMPLE
+C:\PS> New-PipedObject -Connection $con -Results $result
 #>
 function New-PipedObject {
 param(
@@ -95,7 +144,6 @@ param(
     [parameter(Mandatory=$false)]
     [PSCustomObject]$Results
 )
-
     $obj = New-Object PSCustomObject
 
     Add-Member -InputObject $obj -MemberType NoteProperty -Name Connection -Value $Connection
@@ -105,22 +153,39 @@ param(
 }
 
 # Helper functions
+
 <#
-    Returns an array of the currently supported condition types
-    for the Get-Condition cmdlet
+.SYNOPSIS
+A list of condition types currently supported by this module.
+
+.OUTPUTS
+System.Array
+
+.EXAMPLE
+C:\PS> Get-ConditionTypes
 #>
 function Get-ConditionTypes {
 
     return @('LIKE')
 }
 <#
-    Returns a string for a standard REST query condition
+.SYNOPSIS
+Returns a standard REST query condition string.
 
-    $Field - ControlNumber
-    $Value - AZIPPER% (will return all documents with this prefix)
-    $Condition - LIKE
+.PARAMETER Field
+Name of the conditional field.
 
-    Note: Returns all fields on the object i.e. 'fields': ['*']
+.PARAMETER Value
+The value compared for the field.
+
+.PARAMETER Condition
+The condition the value must meet.  Use Get-ConditionTypes to list which conditions are supported by this module.
+
+.OUTPUTS
+System.String. Returns all fields on the object i.e. 'fields': ['*']
+
+.EXAMPLE
+C:\PS> Get-Condition -Field 'ControlNumber' -Value 'AZIPPER%' -Condition 'LIKE'
 #>
 function Get-Condition {
 [CmdletBinding()]
@@ -138,7 +203,7 @@ param(
     # Ensures only supported conditions are used
     if ((Get-ConditionTypes).Contains($Condition) -eq $false)
     {
-        Throw [System.ArgumentException] "Your condition does match one of the supported condition types.  Please check the results of Get-ConditionTypes."
+        Throw [System.ArgumentException] "Your condition does match one of the supported condition types.  Please compare with the Get-ConditionTypes output."
     }
 
     $result = "{ 'condition': "" '{FIELD}' {CONDITION} '{VALUE}' "", 'fields': ['*'] }".
@@ -149,13 +214,26 @@ param(
     return $result
 }
 <#
-    Removes all specified properties from the object
-    and returns it
+.SYNOPSIS
+Removes all specified properties from the object.
 
-    $Object     - any PSObject type
-    $Properties - TBD
+.PARAMETER Object
+The object to remove properties from.
+
+.PARAMETER Properties
+A list of the names of properties to remove.
+
+.OUTPUTS
+System.Management.Automation.PSCustomObject
+
+.EXAMPLE
+C:\PS> Remove-ObjectProperties -Object $obj -Properties @('ArtifactTypeID', 'System Created On')
+
+.NOTES
+This function's intent is to simplify the creation of some Relativity objects by removing system fields from
+a successful read, replacing necessary fields, and sending the object back into a write.
 #>
-function Remove-Properties {
+function Remove-ObjectProperties {
 [CmdletBinding()]
 param(
     [parameter(Mandatory=$true)]
@@ -172,13 +250,26 @@ param(
     return $Object
 }
 <#
-    Replaces the specified properties on the object and
-    returns it
+.SYNOPSIS
+Replaces all specified properties on the object.
 
-    $Object     - Any PSObject type
-    $Properties - 
+.PARAMETER Object
+The object to replace properties on.
+
+.PARAMETER Properties
+A hashtable of the names of properties to replace and their new values.
+
+.OUTPUTS
+System.Management.Automation.PSCustomObject
+
+.EXAMPLE
+C:\PS> Replace-ObjectProperties -Object $obj -Properties {'FirstName':'Bob','LastName':'Smith'}
+
+.NOTES
+This function's intent is to simplify the creation of some Relativity objects by removing system fields from
+a successful read, replacing necessary fields, and sending the object back into a write.
 #>
-function Replace-Properties {
+function Replace-ObjectProperties {
 [CmdletBinding()]
 param(
     [parameter(Mandatory=$true)]
@@ -196,10 +287,22 @@ param(
     return $Object
 }
 <#
-    Returns a plain-text variant of the secure string from Get-Credential.
+.SYNOPSIS
+Returns a plain-text variant of the secure string from Get-Credential.
+
+.PARAMETER SecureString
+A secure password string.
+
+.OUTPUTS
+System.String
+
+.EXAMPLE
+C:\PS> Get-PlainText (Get-Credential).Password
+
+.NOTES
+Function borrowed from http://blog.majcica.com/2015/11/17/powershell-tips-and-tricks-decoding-securestring/
 #>
 function Get-PlainText {
-# Function borrowed from http://blog.majcica.com/2015/11/17/powershell-tips-and-tricks-decoding-securestring/
 [CmdletBinding()]
 param
 (
@@ -223,7 +326,18 @@ param
 	END { }
 }
 <#
-    Replaces the space in a string with %20
+.SYNOPSIS
+Replaces the space in a string with %20.
+
+.PARAMETER Name
+A string with spaces.
+
+.OUTPUTS
+System.String
+
+.EXAMPLE
+C:\PS> Encode-Spaces '/Object Manager'
+'Object%20Manager'
 #>
 function Encode-Spaces {
 param(
