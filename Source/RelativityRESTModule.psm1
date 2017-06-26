@@ -1,4 +1,5 @@
 ﻿# Workspace functions
+#######################
 <#
     Returns all workspaces in the Relativity instance
 #>
@@ -59,6 +60,7 @@ param(
 }
 
 # User functions
+#######################
 <#
     Returns all users in the Relativity instance
 #>
@@ -118,6 +120,7 @@ param(
 }
 
 # Application functions
+#######################
 <#
     Returns all applications in a specified workspace
 
@@ -172,6 +175,7 @@ param(
 }
 
 # Object Type functions
+#######################
 <#
     Returns all object types from one or more workspaces
 
@@ -198,6 +202,7 @@ param(
 }
 
 # Object Query functions
+#######################
 <#
     Queries one or more of any object type in Relativity in a certain workspace
 
@@ -247,6 +252,7 @@ param(
 }
 
 # Document functions
+#######################
 <#
     Reads all fields from one or more documents in a certain workspace
 
@@ -280,6 +286,7 @@ param(
 }
 
 # Saved Search (Keyword) functions
+#######################
 <#
     Reads all fields from a saved search in a certain workspace
 

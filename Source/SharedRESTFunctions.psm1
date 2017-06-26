@@ -1,5 +1,5 @@
 ﻿# Setup functions
-
+#######################
 <#
 .SYNOPSIS
 Gets the required headers for any REST action.
@@ -153,7 +153,7 @@ param(
 }
 
 # Helper functions
-
+#######################
 <#
 .SYNOPSIS
 A list of condition types currently supported by this module.
