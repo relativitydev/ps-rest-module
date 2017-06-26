@@ -580,3 +580,21 @@ param(
 
     return (New-PipedObject -Connection $Connection -Results $results)
 }
+
+# Worker Status functions (Kepler)
+<#
+    Returns a list of all servers
+
+    "Get worker status for all workers" - Relativity.Services.Interfaces.Private.xml
+#>
+function Read-AllServers {
+[CmdletBinding()]
+param(
+    [parameter(Mandatory=$true)]
+    [PSCustomObject]$Connection
+)
+    $Connection.RestAction = '/api/Relativity.Services.WorkerStatus.IWorkerStatusModule/WorkerStatus/GetAllWorkersAsync'
+    $results = Invoke-RestMethod -Uri $Connection.GetRestUri() -Method Post -Headers $Connection.RestHeaders
+
+    return (New-PipedObject -Connection $Connection -Results $results)
+}
